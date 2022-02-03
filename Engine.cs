@@ -6,31 +6,55 @@ namespace Snake
     {
         private static Field field;
         private static Snake snake;
+        public static int Score { get; private set; } = 0;
+        public static int Speed { get; private set; } = 0;
 
         static Engine()
         {
-            field = Field.GetInstance(40, 80);
+            Console.CursorVisible = false;
+        }
+
+        public static bool Run(int height, int width)
+        {
+            field = Field.GetInstance(height, width);
             snake = Snake.Instance;
+            field.AddFood();
+            while (true)
+            {
+                DrawFrame();
+
+                if (!Update())
+                    break;
+                if (Score < 300)
+                    System.Threading.Thread.Sleep(300 - Speed);
+            }
+            return false;
         }
 
         public static void DrawFrame()
         {
             Console.Clear();
-            for (int y = 0; y <= field.Height; y++)
+            for (int y = 0; y < field.Height; y++)
             {
-                for (int x = 0; x <= field.Width; x += 2)
+                for (int x = 0; x < field.Width; x += 2)
                 {
-                    if (x == 0 || y == 0 || y == field.Height || x == field.Width)
+                    switch (field[y, x])
                     {
-                        printWall();
-                    }
-                    else
-                    {
-                        printSpace();
-                    }
-                    if (snake.IsSnake(x, y))
-                    {
-                        printSnake(ref x);
+                        case Field.Obj.Wall:
+                            printWall();
+                            continue;
+                        case Field.Obj.Head:
+                            printHead();
+                            continue;
+                        case Field.Obj.Tail:
+                            printTail();
+                            continue;
+                        case Field.Obj.Food:
+                            printFood();
+                            continue;
+                        case Field.Obj.Space:
+                            printSpace();
+                            continue;
                     }
                 }
                 Console.WriteLine();
@@ -39,7 +63,6 @@ namespace Snake
 
         private static void printWall()
         {
-
             Console.BackgroundColor = ConsoleColor.White;
             Console.Write("  ");
             Console.ResetColor();
@@ -49,24 +72,55 @@ namespace Snake
             Console.ResetColor();
             Console.Write("  ");
         }
-        private static void printSnake(ref int x)
+        private static void printHead()
         {
-            x += 2;
+            Console.BackgroundColor = ConsoleColor.Green;
+            Console.Write("  ");
+            Console.ResetColor();
+        }
+        private static void printTail()
+        {
+            Console.BackgroundColor = ConsoleColor.Gray;
+            Console.Write("  ");
+            Console.ResetColor();
+        }
+        private static void printFood()
+        {
             Console.BackgroundColor = ConsoleColor.Red;
             Console.Write("  ");
             Console.ResetColor();
         }
-
-        public static void Update()
+        public static bool Update()
         {
-            char key = ' ';
-            // snake
+            ConsoleKeyInfo key = new();
             if (Console.KeyAvailable)
-                key = Console.ReadKey().KeyChar;
+                key = Console.ReadKey();
 
+            // check ESC
+            if (key.Key == ConsoleKey.Escape)
+                return false;
+            // check score
+            if (Score >= field.Width * field.Height - 3)
+                return false;
 
-            snake.Update(key);
+            PrintStat();
+            return snake.Update(key.KeyChar, field);
+        }
+
+        public static void AddScore()
+        {
+            Score++;
+            if (Speed < 300)
+                Speed += 10;
+        }
+
+        private static void PrintStat()
+        {
+            Console.WriteLine($"Score: {Score}");
+            Console.WriteLine($"Speed: {Speed}");
         }
     }
+
+
 }
 

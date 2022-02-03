@@ -1,20 +1,22 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Snake
 {
     internal class Snake
     {
-        private enum direction
+        private enum Direction
         {
             up,
             down,
             left,
             right
         }
-        private direction dir;
-        private int x;
-        private int y;
+        private Direction dir;
+        private int x { get => snake.First.Value.Item2; }
+        private int y { get => snake.First.Value.Item1; }
         private static Snake inst;
+        private LinkedList<Tuple<int, int>> snake;
         public static Snake Instance
         {
             get
@@ -25,51 +27,75 @@ namespace Snake
             }
         }
 
-        public bool IsSnake(int x, int y)
-        {
-            return this.x == x && this.y == y;
-        }
-
         private Snake()
         {
-            x = 20;
-            y = 10;
+            snake = new LinkedList<Tuple<int, int>>();
+            snake.AddLast(new Tuple<int, int>(10, 10));
+            snake.AddLast(new Tuple<int, int>(9, 10));
+            snake.AddLast(new Tuple<int, int>(8, 10));
         }
 
-        public void Update(char key)
+        public bool Update(char key, Field field)
         {
+            // update direction
             switch (key)
             {
-                case 'a':
-                    dir = direction.left;
+                case 'a' when dir != Direction.right:
+                    dir = Direction.left;
                     break;
-                case 'd':
-                    dir = direction.right;
+                case 'd' when dir != Direction.left:
+                    dir = Direction.right;
                     break;
-                case 'w':
-                    dir = direction.up;
+                case 'w' when dir != Direction.down:
+                    dir = Direction.up;
                     break;
-                case 's':
-                    dir = direction.down;
+                case 's' when dir != Direction.up:
+                    dir = Direction.down;
                     break;
             }
-
+            //update position
             switch (dir)
             {
-                case direction.up:
-                    y--;
+                case Direction.up:
+                    if (!isFree(field, y - 1, x))
+                        return false;
+                    snake.AddFirst(new Tuple<int, int>(y - 1, x));
                     break;
-                case direction.down:
-                    y++;
+                case Direction.down:
+                    if (!isFree(field, y + 1, x))
+                        return false;
+                    snake.AddFirst(new Tuple<int, int>(y + 1, x));
                     break;
-                case direction.left:
-                    x -= 2;
+                case Direction.left:
+                    if (!isFree(field, y, x - 2))
+                        return false;
+                    snake.AddFirst(new Tuple<int, int>(y, x - 2));
                     break;
-                case direction.right:
-                    x += 2;
+                case Direction.right:
+                    if (!isFree(field, y, x + 2))
+                        return false;
+                    snake.AddFirst(new Tuple<int, int>(y, x + 2));
                     break;
             }
-        }
 
+            field[snake.Last.Value.Item1, snake.Last.Value.Item2] = Field.Obj.Space;
+            field[snake.First.Next.Value.Item1, snake.First.Next.Value.Item2] = Field.Obj.Tail;
+
+            snake.RemoveLast();
+
+            field[y, x] = Field.Obj.Head;
+            return true;
+        }
+        private bool isFree(Field field, int y, int x)
+        {
+            if (field[y, x] == Field.Obj.Food)
+            {
+                snake.AddFirst(new Tuple<int, int>(y, x));
+                field[y, x] = Field.Obj.Space;
+                Engine.AddScore();
+                field.AddFood();
+            }
+            return field[y, x] == Field.Obj.Space;
+        }
     }
 }

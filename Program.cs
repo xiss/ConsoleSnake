@@ -6,23 +6,7 @@ namespace Snake
     {
         static void Main(string[] args)
         {
-            var field = Field.GetInstance(20, 40);
-            var snake = Snake.Instance;
-            Console.CursorVisible = false;
-
-            
-
-            while (true)
-            {
-                Engine.DrawFrame();
-                Engine.Update();
-
-                
-
-                //System.Threading.Thread.Sleep(50);
-
-            }
-        }   
-
+            Engine.Run(20, 40);
+        }
     }
 }
