@@ -11,14 +11,14 @@ namespace Snake
 
         public int Width { get; private set; }
         public int Height { get; private set; }
-        private Obj[,] field;
+        private Obj[,] field; // никогда не видел массива перечислений на котором бы работала программа. :)
         public Obj this[int y, int x]
         {
             get => field[y, x];
             set => field[y, x] = value;
         }
 
-
+        // Хорошая попытка реализации паттерна синглтон!
         public static Field GetInstance(int height, int width)
         {
             if (instance == null)
@@ -58,6 +58,8 @@ namespace Snake
                 }
             }
         }
+
+        // Тут перечисление лишнее. Непонятно по имени для чего оно...
         public enum Obj
         {
             Space,
