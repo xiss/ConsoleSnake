@@ -2,6 +2,7 @@
 
 namespace Snake
 {
+    // А зачем делать клас статическим? Мы ведь проходили ->  статика, только для вспомогательных классов (Console, Environment...)
     internal static class Engine
     {
         private static Field field;
@@ -61,6 +62,7 @@ namespace Snake
             }
         }
 
+        // Методы всегда с большой буквы!
         private static void printWall()
         {
             Console.BackgroundColor = ConsoleColor.White;
@@ -72,6 +74,15 @@ namespace Snake
             Console.ResetColor();
             Console.Write("  ");
         }
+
+        // Много дублирования кода. Можно же логику в один метод уместить?!
+        //private static void PrintColor(ConsoleColor color)
+        //{
+        //    Console.BackgroundColor = color;
+        //    Console.Write("  ");
+        //    Console.ResetColor();
+        //}
+
         private static void printHead()
         {
             Console.BackgroundColor = ConsoleColor.Green;

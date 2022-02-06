@@ -5,6 +5,7 @@ namespace Snake
 {
     internal class Snake
     {
+        // Уже есть для этого перечисление ConsoleKey и его значния, например UpArrow
         private enum Direction
         {
             up,
@@ -15,6 +16,8 @@ namespace Snake
         private Direction dir;
         private int x { get => snake.First.Value.Item2; }
         private int y { get => snake.First.Value.Item1; }
+
+        // мы кортежи и списки не проходили, поэтому молодцы что пробуете использовать, но немного не в тему...
         private static Snake inst;
         private LinkedList<Tuple<int, int>> snake;
         public static Snake Instance
@@ -78,14 +81,16 @@ namespace Snake
                     break;
             }
 
-            field[snake.Last.Value.Item1, snake.Last.Value.Item2] = Field.Obj.Space;
-            field[snake.First.Next.Value.Item1, snake.First.Next.Value.Item2] = Field.Obj.Tail;
+            field[snake.Last.Value.Item1, snake.Last.Value.Item2] = Field.Obj.Space; // Глядя сюда можно испугаться)
+            field[snake.First.Next.Value.Item1, snake.First.Next.Value.Item2] = Field.Obj.Tail; // Сюда лучше не смотреть))
 
             snake.RemoveLast();
 
             field[y, x] = Field.Obj.Head;
             return true;
         }
+
+        // Именование с большой буквы...
         private bool isFree(Field field, int y, int x)
         {
             if (field[y, x] == Field.Obj.Food)
