@@ -4,15 +4,12 @@ namespace Snake
     internal class Field
     {
         private static Field instance;
-        private readonly int minHeight = 10;
-        private readonly int maxHeight = 40;
-        private readonly int minWidth = 20;
-        private readonly int maxWidth = 80;
-
         public int Width { get; private set; }
         public int Height { get; private set; }
-        private Obj[,] field; // никогда не видел массива перечислений на котором бы работала программа. :)
-        public Obj this[int y, int x]
+        private readonly PixelType[,] field; // никогда не видел массива перечислений на котором бы работала программа. :)
+        // А как иначе? Можно сделать массив символов, но мне кажется это хуже. Как узнать цвет фона в конкретном месте я незнаю.
+
+        public PixelType this[int y, int x]
         {
             get => field[y, x];
             set => field[y, x] = value;
@@ -25,42 +22,37 @@ namespace Snake
                 instance = new Field(height, width);
             return instance;
         }
-
+        private Field() { }// Запрещаем создавать поле напрямую
         private Field(int height, int width)
         {
-            if (height < minHeight)
-                Height = minHeight;
-            else if (height > maxHeight)
-                Height = maxHeight;
-            else
-                Height = height;
-
-            if (width < minWidth)
-                Width = width;
-            else if (width > maxWidth)
-                Width = maxWidth;
-            else Width = width - (width % 2);
+            Width = width;
             Height = height;
-
-            field = new Obj[Height, Width];
-            for (int y = 0; y < Height; y++)
+            field = new PixelType[height, width];
+            // Рисуем поле и создаем массив с этим полем
+            for (int y = 0; y < height; y++)
             {
-                for (int x = 0; x < Width; x += 2)
+                for (int x = 0; x < width; x += 2)
                 {
-                    if (x == 0 || y == 0 || y == Height - 1 || x == Width - 2)
+                    if (x == 0 || y == 0 || y == height - 1 || x == width - 2)
                     {
-                        field[y, x] = Obj.Wall;
+                        field[y, x] = PixelType.Wall;
+                        Game.PrintPixel(new Point(x, y), ConsoleColor.White);
                     }
                     else
                     {
-                        field[y, x] = Obj.Space;
+                        field[y, x] = PixelType.Space;
+                        continue;
                     }
                 }
             }
+            AddFood(6);
         }
 
         // Тут перечисление лишнее. Непонятно по имени для чего оно...
-        public enum Obj
+        /// <summary>
+        /// Тип пикселя для поля
+        /// </summary>
+        public enum PixelType
         {
             Space,
             Wall,
@@ -69,22 +61,23 @@ namespace Snake
             Food
         }
 
-        public void AddFood()
+        public void AddFood(int foodToAdd = 1)
         {
             Random rnd = new();
-            while (true)
+            while (foodToAdd !=0)
             {
+                // Выбираем случайную позицию для еды
                 int x = rnd.Next(1, Width - 1);
-                x = x - x % 2;
+                x -= x % 2;
                 int y = rnd.Next(1, Height - 1);
-                if (field[y, x] == Obj.Space)
+                // Если попали в змею или стенку - пересоздаем
+                if (field[y, x] == PixelType.Space)
                 {
-
-                    field[y, x] = Obj.Food;
-                    break;
+                    field[y, x] = PixelType.Food;
+                    Game.PrintPixel(new Point(x, y), ConsoleColor.Red);
+                    foodToAdd--;
                 }
             }
-
         }
     }
 }

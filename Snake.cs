@@ -5,102 +5,120 @@ namespace Snake
 {
     internal class Snake
     {
-        // Уже есть для этого перечисление ConsoleKey и его значния, например UpArrow
-        private enum Direction
-        {
-            up,
-            down,
-            left,
-            right
-        }
-        private Direction dir;
-        private int x { get => snake.First.Value.Item2; }
-        private int y { get => snake.First.Value.Item1; }
-
-        // мы кортежи и списки не проходили, поэтому молодцы что пробуете использовать, но немного не в тему...
+        private ConsoleKey direction = ConsoleKey.W;
+        private int X { get => snake.First.Value.X; }
+        private int Y { get => snake.First.Value.Y; }
         private static Snake inst;
-        private LinkedList<Tuple<int, int>> snake;
-        public static Snake Instance
+        private int eatenFood = 0;
+        private readonly Field field;
+        // На мой взгляд связный список как раз то что нужно, мы не перерисовываем всю змею а только голову и хвост, связнный список как раз позволяет удобно это делать
+        private readonly LinkedList<Point> snake;
+        private Snake() { }
+        public static Snake GetInstance(Field field)
         {
-            get
-            {
-                if (inst == null)
-                    inst = new Snake();
-                return inst;
-            }
+            if (inst == null)
+                inst = new Snake(field);
+            return inst;
         }
 
-        private Snake()
+        private Snake(Field field)
         {
-            snake = new LinkedList<Tuple<int, int>>();
-            snake.AddLast(new Tuple<int, int>(10, 10));
-            snake.AddLast(new Tuple<int, int>(9, 10));
-            snake.AddLast(new Tuple<int, int>(8, 10));
+            this.field = field;
+            snake = new LinkedList<Point>();
+            snake.AddLast(new Point(10, 10));
+            snake.AddLast(new Point(9, 10));
+            snake.AddLast(new Point(8, 10));
+
+            DrawSnake();
         }
 
-        public bool Update(char key, Field field)
+        public bool Update(ConsoleKey key, Field field)
         {
-            // update direction
+            // Проверяем куда змея движется, сохраняем направление
             switch (key)
             {
-                case 'a' when dir != Direction.right:
-                    dir = Direction.left;
+                case ConsoleKey.A when direction != ConsoleKey.D:
+                    direction = ConsoleKey.A;
                     break;
-                case 'd' when dir != Direction.left:
-                    dir = Direction.right;
+                case ConsoleKey.D when direction != ConsoleKey.A:
+                    direction = ConsoleKey.D;
                     break;
-                case 'w' when dir != Direction.down:
-                    dir = Direction.up;
+                case ConsoleKey.W when direction != ConsoleKey.S:
+                    direction = ConsoleKey.W;
                     break;
-                case 's' when dir != Direction.up:
-                    dir = Direction.down;
+                case ConsoleKey.S when direction != ConsoleKey.W:
+                    direction = ConsoleKey.S;
                     break;
             }
-            //update position
-            switch (dir)
+            // пробуем сделать шаг на одну клетку
+            switch (direction)
             {
-                case Direction.up:
-                    if (!isFree(field, y - 1, x))
+                case ConsoleKey.W:
+                    if (!TryStep(field, Y - 1, X))
                         return false;
-                    snake.AddFirst(new Tuple<int, int>(y - 1, x));
+                    DrawNewSegment(Y - 1, X);
                     break;
-                case Direction.down:
-                    if (!isFree(field, y + 1, x))
+                case ConsoleKey.S:
+                    if (!TryStep(field, Y + 1, X))
                         return false;
-                    snake.AddFirst(new Tuple<int, int>(y + 1, x));
+                    DrawNewSegment(Y + 1, X);
                     break;
-                case Direction.left:
-                    if (!isFree(field, y, x - 2))
+                case ConsoleKey.A:
+                    if (!TryStep(field, Y, X - 2))
                         return false;
-                    snake.AddFirst(new Tuple<int, int>(y, x - 2));
+                    DrawNewSegment(Y, X - 2);
                     break;
-                case Direction.right:
-                    if (!isFree(field, y, x + 2))
+                case ConsoleKey.D:
+                    if (!TryStep(field, Y, X + 2))
                         return false;
-                    snake.AddFirst(new Tuple<int, int>(y, x + 2));
+                    DrawNewSegment(Y, X + 2);
                     break;
             }
-
-            field[snake.Last.Value.Item1, snake.Last.Value.Item2] = Field.Obj.Space; // Глядя сюда можно испугаться)
-            field[snake.First.Next.Value.Item1, snake.First.Next.Value.Item2] = Field.Obj.Tail; // Сюда лучше не смотреть))
-
-            snake.RemoveLast();
-
-            field[y, x] = Field.Obj.Head;
             return true;
         }
 
         // Именование с большой буквы...
-        private bool isFree(Field field, int y, int x)
+        private bool TryStep(Field field, int y, int x)
         {
-            if (field[y, x] == Field.Obj.Food)
+            if (field[y, x] == Field.PixelType.Food)
             {
-                snake.AddFirst(new Tuple<int, int>(y, x));
-                field[y, x] = Field.Obj.Space;
-                Engine.AddScore();
+                eatenFood++;
+                field[y, x] = Field.PixelType.Space;
+                Game.GetInstance().AddScore();
                 field.AddFood();
             }
-            return field[y, x] == Field.Obj.Space;
+            return field[y, x] == Field.PixelType.Space;
+        }
+
+        private void DrawSnake()
+        {
+            bool isHead = true;
+            foreach (var segment in snake)
+            {
+                Game.PrintPixel(segment, isHead ? ConsoleColor.Red : ConsoleColor.Gray);
+                isHead = false;
+            }
+        }
+        private void DrawNewSegment(int y, int x)
+        {
+            // Рисуем новый сигмент на поле и добавляем его в змейку
+            Game.PrintPixel(snake.First.Value, ConsoleColor.Gray);
+            snake.AddFirst(new Point(x, y));
+            Game.PrintPixel(snake.First.Value, ConsoleColor.DarkGreen);
+            field[y, x] = Field.PixelType.Tail;
+
+            //Удаляем последний сегмент из массива и с поля
+
+            if (eatenFood == 0)
+            {
+                Game.PrintPixel(snake.Last.Value, ConsoleColor.Black);
+                field[snake.Last.Value.Y, snake.Last.Value.X] = Field.PixelType.Space;
+                snake.RemoveLast();
+            }
+            else
+            {
+                eatenFood--;
+            }
         }
     }
 }
